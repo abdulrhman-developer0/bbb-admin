@@ -14,6 +14,7 @@ class BbbEvent extends Model
     ];
 
     protected $casts = [
+        'payload' => 'array',
         'processed' => 'boolean',
         'processed_at' => 'datetime',
     ];
