@@ -18,7 +18,7 @@ class BbbEventController extends Controller
 
         BbbEvent::create([
             'event_type' => $eventType,
-            'metadata' => $payload,
+            'payload' => $payload,
         ]);
 
         return response()->json([
