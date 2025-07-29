@@ -16,10 +16,9 @@ Route::middleware('auth')->group(function () {
     // Hooks Resource
     Route::resource('hooks', BbbHookController::class)->except(['show']);
     
-    // Events page
-    Route::get('/events', function () {
-        return Inertia::render('Events/Index');
-    })->name('events.index');
+    // Events routes
+    Route::get('/events', [\App\Http\Controllers\EventController::class, 'index'])->name('events.index');
+    Route::get('/events/{event}', [\App\Http\Controllers\EventController::class, 'show'])->name('events.show');
 
     // Profile routes (kept for reference, but not linked in the UI)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

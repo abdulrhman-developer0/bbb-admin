@@ -1,24 +1,23 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { Head, Link, router, usePage } from "@inertiajs/react";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import { useState } from "react";
 
 const EventItem = ({ event }) => {
     const [expanded, setExpanded] = useState(false);
-    
+
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleString();
     };
 
     return (
         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-4">
-            <div 
+            <div
                 className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50"
                 onClick={() => setExpanded(!expanded)}
             >
                 <div>
                     <h3 className="text-lg font-medium text-gray-900">
-                        {event.event || 'Unknown Event'}
+                        {event.event || "Unknown Event"}
                     </h3>
                     <p className="text-sm text-gray-500">
                         {formatDate(event.created_at)}
@@ -26,7 +25,7 @@ const EventItem = ({ event }) => {
                 </div>
                 <svg
                     className={`w-5 h-5 text-gray-500 transform transition-transform ${
-                        expanded ? 'rotate-180' : ''
+                        expanded ? "rotate-180" : ""
                     }`}
                     fill="none"
                     viewBox="0 0 24 24"
@@ -51,59 +50,29 @@ const EventItem = ({ event }) => {
     );
 };
 
-export default function EventsIndex() {
-    const [events, setEvents] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState(1);
-    const [lastPage, setLastPage] = useState(1);
-    const [polling, setPolling] = useState(true);
+export default function EventsIndex({ events }) {
+    const [polling, setPolling] = useState(false);
+    const { url } = usePage();
 
-    const fetchEvents = async (page = 1) => {
-        try {
-            const response = await axios.get(`/api/bbb/events?page=${page}`);
-            setEvents(response.data.data);
-            setLastPage(response.data.last_page);
-        } catch (error) {
-            console.error('Error fetching events:', error);
-        } finally {
-            setLoading(false);
+    // Handle polling
+    const togglePolling = () => {
+        setPolling(!polling);
+        if (!polling) {
+            // If we're turning polling on, refresh immediately
+            router.reload();
         }
     };
 
-    useEffect(() => {
-        fetchEvents(page);
+    // Set up polling effect
+    React.useEffect(() => {
+        if (!polling) return;
 
-        // Set up polling if enabled
-        let interval;
-        if (polling) {
-            interval = setInterval(() => {
-                fetchEvents(page);
-            }, 10000); // Poll every 10 seconds
-        }
+        const interval = setInterval(() => {
+            router.reload({ only: ["events"] });
+        }, 10000);
 
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [page, polling]);
-
-    const handlePageChange = (newPage) => {
-        if (newPage >= 1 && newPage <= lastPage) {
-            setPage(newPage);
-            fetchEvents(newPage);
-        }
-    };
-
-    if (loading) {
-        return (
-            <AuthenticatedLayout>
-                <div className="py-12">
-                    <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                        <div className="text-center">Loading events...</div>
-                    </div>
-                </div>
-            </AuthenticatedLayout>
-        );
-    }
+        return () => clearInterval(interval);
+    }, [polling, url]);
 
     return (
         <AuthenticatedLayout>
@@ -122,11 +91,11 @@ export default function EventsIndex() {
                                         onClick={() => setPolling(!polling)}
                                         className={`px-4 py-2 text-sm font-medium rounded-md ${
                                             polling
-                                                ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                                ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                                : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                                         }`}
                                     >
-                                        {polling ? 'Live: ON' : 'Live: OFF'}
+                                        {polling ? "Live: ON" : "Live: OFF"}
                                     </button>
                                     <button
                                         onClick={() => fetchEvents(page)}
@@ -137,45 +106,55 @@ export default function EventsIndex() {
                                 </div>
                             </div>
 
-                            {events.length === 0 ? (
+                            {events.data.length === 0 ? (
                                 <div className="text-center py-12">
-                                    <p className="text-gray-500">No events found.</p>
+                                    <p className="text-gray-500">
+                                        No events found.
+                                    </p>
                                 </div>
                             ) : (
                                 <>
                                     <div className="space-y-4">
-                                        {events.map((event) => (
-                                            <EventItem key={event.id} event={event} />
+                                        {events.data.map((event) => (
+                                            <EventItem
+                                                key={event.id}
+                                                event={event}
+                                            />
                                         ))}
                                     </div>
 
                                     {/* Pagination */}
                                     <div className="flex items-center justify-between mt-6">
-                                        <button
-                                            onClick={() => handlePageChange(page - 1)}
-                                            disabled={page === 1}
-                                            className={`px-4 py-2 text-sm font-medium rounded-md ${
-                                                page === 1
-                                                    ? 'text-gray-400 cursor-not-allowed'
-                                                    : 'text-blue-600 hover:bg-blue-50'
-                                            }`}
-                                        >
-                                            Previous
-                                        </button>
+                                        {events.prev_page_url ? (
+                                            <Link
+                                                href={events.prev_page_url}
+                                                className="px-4 py-2 text-sm font-medium text-blue-600 rounded-md hover:bg-blue-50"
+                                            >
+                                                Previous
+                                            </Link>
+                                        ) : (
+                                            <span className="px-4 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                                Previous
+                                            </span>
+                                        )}
+
                                         <div className="text-sm text-gray-700">
-                                            Page {page} of {lastPage}
+                                            Page {events.current_page} of{" "}
+                                            {events.last_page}
                                         </div>
-                                        <button
-                                            onClick={() => handlePageChange(page + 1)}
-                                            disabled={page >= lastPage}
-                                            className={`px-4 py-2 text-sm font-medium rounded-md ${
-                                                page >= lastPage
-                                                    ? 'text-gray-400 cursor-not-allowed'
-                                                    : 'text-blue-600 hover:bg-blue-50'
-                                            }`}
-                                        >
-                                            Next
-                                        </button>
+
+                                        {events.next_page_url ? (
+                                            <Link
+                                                href={events.next_page_url}
+                                                className="px-4 py-2 text-sm font-medium text-blue-600 rounded-md hover:bg-blue-50"
+                                            >
+                                                Next
+                                            </Link>
+                                        ) : (
+                                            <span className="px-4 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                                Next
+                                            </span>
+                                        )}
                                     </div>
                                 </>
                             )}
