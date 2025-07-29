@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class BbbHookController extends Controller
@@ -31,9 +32,6 @@ class BbbHookController extends Controller
      */
     public function index()
     {
-        $hooks = $this->bbbHookService->getHooks();
-        // dd($hooks);
-
         $hooks = auth()->user()->hooks()
             ->latest()
             ->paginate(10)
@@ -71,7 +69,7 @@ class BbbHookController extends Controller
             'callback_url' => 'required|url',
             'meeting_id' => 'nullable|string',
             'event_type' => [
-                'required',
+                'nullable',
                 Rule::in([
                     'meeting-created',
                     'meeting-ended',
@@ -85,34 +83,34 @@ class BbbHookController extends Controller
             'raw_data' => 'sometimes|boolean',
         ]);
 
-        try {
-            // Register the hook with BBB server
+
+        // Register the hook with BBB server
+        if (! $this->bbbHookService->callbackUrlExists($validated['callback_url'])) {
             $hookData = $this->bbbHookService->createHook(
                 callbackUrl: $request->input('callback_url'),
                 meetingId: $request->input('meeting_id'),
                 eventType: $request->input('event_type')
             );
-
-            // Store the hook in our database
-            $hook = $request->user()->hooks()->create([
-                'callback_url' => $validated['callback_url'],
-                'meeting_id' => $validated['meeting_id'] ?? null,
-                'hook_id' => $hookData['hookID'] ?? null,
-                'event_type' => $validated['event_type'],
-                'metadata' => $hookData,
-                'is_active' => true,
-                'permanent_hook' => $validated['permanent_hook'] ?? false,
-                'raw_data' => $validated['raw_data'] ?? false,
-            ]);
-
-            return redirect()->route('hooks.index')
-                ->with('status', 'Hook created successfully');
-        } catch (\Exception $e) {
-            Log::error('Error creating hook: ' . $e->getMessage());
-            return back()->withErrors([
-                'error' => 'Failed to create hook. Please try again.'
+        } else {
+            throw ValidationException::withMessages([
+                'callback_url' => 'Callback URL already exists',
             ]);
         }
+
+        // Store the hook in our database
+        $hook = $request->user()->hooks()->create([
+            'callback_url' => $validated['callback_url'],
+            'meeting_id' => $validated['meeting_id'] ?? null,
+            'hook_id' => $hookData['hookID'] ?? null,
+            'event_type' => $validated['event_type'],
+            'metadata' => $hookData,
+            'is_active' => true,
+            'permanent_hook' => $validated['permanent_hook'] ?? false,
+            'raw_data' => $validated['raw_data'] ?? false,
+        ]);
+
+        return redirect()->route('hooks.index')
+            ->with('status', 'Hook created successfully');
     }
 
     /**
@@ -223,8 +221,8 @@ class BbbHookController extends Controller
 
         try {
             // Remove from BBB server if hook ID exists
-            if ($hook->hook_id) {
-                $this->unregisterHookFromBbb($hook);
+            if ($hook->hook_id && $this->bbbHookService->hookExists($hook->hook_id)) {
+                $this->bbbHookService->removeHook($hook->hook_id);
             }
 
             $hook->delete();
@@ -237,50 +235,5 @@ class BbbHookController extends Controller
                 'error' => 'Failed to delete hook. Please try again.'
             ]);
         }
-    }
-
-    /**
-     * Register a hook with the BBB server.
-     */
-    protected function registerHookWithBbb($user, array $data)
-    {
-        $params = [
-            'callback_url' => $data['callback_url'],
-            'meeting_id' => $data['meeting_id'] ?? null,
-            'event_type' => $data['event_type'] ?? null,
-            'get_raw' => true,
-        ];
-
-        return $this->bbbHookService->createHook($params);
-    }
-
-    /**
-     * Unregister a hook from the BBB server.
-     */
-    protected function unregisterHookFromBbb(BbbHook $hook)
-    {
-        if (!$hook->hook_id) {
-            return true;
-        }
-
-        try {
-            $this->bbbHookService->destroyHook($hook->hook_id);
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Failed to unregister hook from BBB server', [
-                'hook_id' => $hook->id,
-                'error' => $e->getMessage()
-            ]);
-            throw new \Exception('Failed to unregister hook from BBB server: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Generate a checksum for BBB API calls.
-     */
-    protected function generateChecksum(string $action, string $secret, array $params = []): string
-    {
-        $queryString = http_build_query($params);
-        return hash('sha256', $action . $queryString . $secret);
     }
 }

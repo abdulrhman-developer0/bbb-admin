@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('callback_url');
             $table->string('meeting_id')->nullable();
             $table->string('hook_id')->nullable(); // The ID returned by BBB when registering the hook
-            $table->string('event_type'); // e.g., 'meeting-created', 'user-joined', 'meeting-ended', etc.
+            $table->string('event_type')->nullable(); // e.g., 'meeting-created', 'user-joined', 'meeting-ended', etc.
             $table->boolean('is_active')->default(true);
             $table->json('metadata')->nullable(); // Store any additional data
             $table->timestamp('last_called_at')->nullable();
