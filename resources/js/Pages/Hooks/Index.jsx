@@ -1,11 +1,11 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, Link, router } from "@inertiajs/react";
+import { PencilIcon, TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 export default function Index({ hooks, status }) {
     const handleDelete = (hook) => {
-        if (confirm('Are you sure you want to delete this hook?')) {
-            router.delete(route('hooks.destroy', hook.id));
+        if (confirm("Are you sure you want to delete this hook?")) {
+            router.delete(route("hooks.destroy", hook.id));
         }
     };
 
@@ -17,7 +17,7 @@ export default function Index({ hooks, status }) {
                         Webhooks
                     </h2>
                     <Link
-                        href={route('hooks.create')}
+                        href={route("hooks.create")}
                         className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
                     >
                         <PlusIcon className="h-4 w-4 mr-2" />
@@ -65,7 +65,18 @@ export default function Index({ hooks, status }) {
                                                 <tr key={hook.id}>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="text-sm font-medium text-gray-900">
-                                                            {hook.event_type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                                            {hook.event_type
+                                                                ? hook.event_type
+                                                                      .replace(
+                                                                          /-/g,
+                                                                          " "
+                                                                      )
+                                                                      .replace(
+                                                                          /\b\w/g,
+                                                                          (l) =>
+                                                                              l.toUpperCase()
+                                                                      )
+                                                                : "Not Specified"}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -75,24 +86,40 @@ export default function Index({ hooks, status }) {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="text-sm text-gray-500">
-                                                            {hook.meeting_id || 'All Meetings'}
+                                                            {hook.meeting_id ||
+                                                                "All Meetings"}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${hook.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                            {hook.is_active ? 'Active' : 'Inactive'}
+                                                        <span
+                                                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                                hook.is_active
+                                                                    ? "bg-green-100 text-green-800"
+                                                                    : "bg-red-100 text-red-800"
+                                                            }`}
+                                                        >
+                                                            {hook.is_active
+                                                                ? "Active"
+                                                                : "Inactive"}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                         <Link
-                                                            href={route('hooks.edit', hook.id)}
+                                                            href={route(
+                                                                "hooks.edit",
+                                                                hook.id
+                                                            )}
                                                             className="text-indigo-600 hover:text-indigo-900 mr-4"
                                                         >
                                                             <PencilIcon className="h-4 w-4 inline mr-1" />
                                                             Edit
                                                         </Link>
                                                         <button
-                                                            onClick={() => handleDelete(hook)}
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    hook
+                                                                )
+                                                            }
                                                             className="text-red-600 hover:text-red-900"
                                                         >
                                                             <TrashIcon className="h-4 w-4 inline mr-1" />
@@ -103,30 +130,51 @@ export default function Index({ hooks, status }) {
                                             ))}
                                         </tbody>
                                     </table>
-                                    
+
                                     {/* Pagination */}
                                     {hooks.links.length > 3 && (
                                         <div className="px-6 py-4">
                                             <div className="flex items-center justify-between">
                                                 <div className="text-sm text-gray-700">
-                                                    Showing <span className="font-medium">{hooks.from}</span> to{' '}
-                                                    <span className="font-medium">{hooks.to}</span> of{' '}
-                                                    <span className="font-medium">{hooks.total}</span> results
+                                                    Showing{" "}
+                                                    <span className="font-medium">
+                                                        {hooks.from}
+                                                    </span>{" "}
+                                                    to{" "}
+                                                    <span className="font-medium">
+                                                        {hooks.to}
+                                                    </span>{" "}
+                                                    of{" "}
+                                                    <span className="font-medium">
+                                                        {hooks.total}
+                                                    </span>{" "}
+                                                    results
                                                 </div>
                                                 <div className="flex space-x-2">
-                                                    {hooks.links.map((link, idx) => (
-                                                        <button
-                                                            key={idx}
-                                                            onClick={() => router.get(link.url || '#')}
-                                                            className={`px-3 py-1 rounded-md ${
-                                                                link.active
-                                                                    ? 'bg-indigo-100 text-indigo-700'
-                                                                    : 'text-gray-700 hover:bg-gray-100'
-                                                            }`}
-                                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                                            disabled={!link.url}
-                                                        />
-                                                    ))}
+                                                    {hooks.links.map(
+                                                        (link, idx) => (
+                                                            <button
+                                                                key={idx}
+                                                                onClick={() =>
+                                                                    router.get(
+                                                                        link.url ||
+                                                                            "#"
+                                                                    )
+                                                                }
+                                                                className={`px-3 py-1 rounded-md ${
+                                                                    link.active
+                                                                        ? "bg-indigo-100 text-indigo-700"
+                                                                        : "text-gray-700 hover:bg-gray-100"
+                                                                }`}
+                                                                dangerouslySetInnerHTML={{
+                                                                    __html: link.label,
+                                                                }}
+                                                                disabled={
+                                                                    !link.url
+                                                                }
+                                                            />
+                                                        )
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -148,16 +196,21 @@ export default function Index({ hooks, status }) {
                                             d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                         />
                                     </svg>
-                                    <h3 className="mt-2 text-sm font-medium text-gray-900">No hooks</h3>
+                                    <h3 className="mt-2 text-sm font-medium text-gray-900">
+                                        No hooks
+                                    </h3>
                                     <p className="mt-1 text-sm text-gray-500">
                                         Get started by creating a new webhook.
                                     </p>
                                     <div className="mt-6">
                                         <Link
-                                            href={route('hooks.create')}
+                                            href={route("hooks.create")}
                                             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                         >
-                                            <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                                            <PlusIcon
+                                                className="-ml-1 mr-2 h-5 w-5"
+                                                aria-hidden="true"
+                                            />
                                             New Hook
                                         </Link>
                                     </div>

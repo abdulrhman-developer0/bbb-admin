@@ -103,10 +103,13 @@ class BBBHookService
 
         $data = $this->bbbService->callEndpoint('hooks/list', $params);
 
-        if ($data['returncode'] != 'SUCCESS') {
+        if ($data['returncode'] != 'SUCCESS' || empty($data['hooks'])) {
             return collect([]);
         }
 
-        return collect($data['hooks']['hook']);
+        $hook = $data['hooks']['hook'];
+        $hooks = isset($hook[0]) ? $hook : [$hook];
+
+        return collect($hooks);
     }
 }

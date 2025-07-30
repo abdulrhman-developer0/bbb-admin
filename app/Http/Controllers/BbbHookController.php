@@ -32,6 +32,12 @@ class BbbHookController extends Controller
      */
     public function index()
     {
+        // $this->bbbHookService->getHooks()->pluck('hookID')->each(function ($hookID) {
+        //     $this->bbbHookService->removeHook($hookID);
+        // });
+
+        dd($this->bbbHookService->getHooks()->toArray());
+
         $hooks = auth()->user()->hooks()
             ->latest()
             ->paginate(10)
