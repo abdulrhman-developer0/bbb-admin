@@ -36,7 +36,7 @@ class BbbHookController extends Controller
         //     $this->bbbHookService->removeHook($hookID);
         // });
 
-        dd($this->bbbHookService->getHooks()->toArray());
+        // dd($this->bbbHookService->getHooks()->toArray());
 
         $hooks = auth()->user()->hooks()
             ->latest()
